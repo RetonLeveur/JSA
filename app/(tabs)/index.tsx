@@ -1,107 +1,230 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
-
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
+import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Link } from "expo-router";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Hebdomadaire, HebomadaireList } from "@/types/hebdomadaire";
+
+const temp: Hebdomadaire = {
+  date: "2026-04-26",
+  machines: [
+    {
+      machines: {
+        id: 1,
+        name: "Machine 1",
+        description: "Description of Machine 1",
+        pieces: []
+      },
+      amount: 3
+    },
+    {
+      machines: {
+        id: 2,
+        name: "Machine 2",
+        description: "Description of Machine 2",
+        pieces: []
+      },
+      amount: 1
+    },
+    {
+      machines: {
+        id: 3,
+        name: "Machine 3",
+        description: "Description of Machine 3",
+        pieces: []
+      },
+      amount: 5
+    },
+    {
+      machines: {
+        id: 4,
+        name: "Machine 4",
+        description: "Description of Machine 4",
+        pieces: []
+      },
+      amount: 2
+    },
+    {
+      machines: {
+        id: 5,
+        name: "Machine 5",
+        description: "Description of Machine 5",
+        pieces: []
+      },
+      amount: 4
+    }
+  ]
+};
+
+function AmountStepper({ amount }: { amount: number }) {
+  return (
+    <View style={styles.stepper}>
+      <TouchableOpacity style={styles.stepperButton} onPress={() => {}}>
+        <IconSymbol name="minus" size={16} color="#0a7ea4" />
+      </TouchableOpacity>
+      <ThemedText type="defaultSemiBold" style={styles.stepperValue}>
+        {amount}
+      </ThemedText>
+      <TouchableOpacity style={styles.stepperButton} onPress={() => {}}>
+        <IconSymbol name="plus" size={16} color="#0a7ea4" />
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <ThemedView style={styles.header}>
+          <View>
+            <ThemedText type="title">Hebdomadaire</ThemedText>
+            <ThemedText style={styles.meta}>
+              {temp.date} · {temp.machines.length} items
+            </ThemedText>
+          </View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => {}} style={styles.refreshButton}>
+              <IconSymbol name="arrow.clockwise" size={18} color="#0a7ea4" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {}} style={styles.reportButton}>
+              <IconSymbol name="doc.text" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </ThemedView>
+        <FlatList
+          data={temp.machines}
+          keyExtractor={(item: HebomadaireList) => item.machines.id.toString()}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          renderItem={({ item }: { item: HebomadaireList }) => (
+            <ThemedView style={styles.card}>
+              <View style={styles.cardBody}>
+                <ThemedText type="defaultSemiBold">
+                  {item.machines.name}
+                </ThemedText>
+                {item.machines.description ? (
+                  <ThemedText style={styles.description}>
+                    {item.machines.description}
+                  </ThemedText>
+                ) : null}
+                <ThemedText style={styles.piecesCount}>
+                  {item.machines.pieces.length} piece
+                  {item.machines.pieces.length !== 1 ? "s" : ""}
+                </ThemedText>
+              </View>
+              <AmountStepper amount={item.amount} />
+            </ThemedView>
+          )}
+          ListFooterComponent={() => (
+            <TouchableOpacity onPress={() => {}} style={styles.addButton}>
+              <IconSymbol name="plus" size={22} color="#fff" />
+            </TouchableOpacity>
+          )}
         />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction
-              title="Action"
-              icon="cube"
-              onPress={() => alert("Action pressed")}
-            />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  meta: {
+    fontSize: 13,
+    opacity: 0.4
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+    gap: 8
+  },
+  separator: {
+    height: 8
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
+    padding: 14,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2
+  },
+  cardBody: {
+    flex: 1,
+    gap: 2
+  },
+  description: {
+    fontSize: 13,
+    opacity: 0.6
+  },
+  piecesCount: {
+    fontSize: 12,
+    opacity: 0.4
+  },
+  stepper: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    borderWidth: 1.5,
+    borderColor: "#0a7ea4",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 4
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  stepperButton: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center"
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  stepperValue: {
+    fontSize: 15,
+    minWidth: 20,
+    textAlign: "center",
+    color: "#0a7ea4"
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+  refreshButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#0a7ea4",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  reportButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#0a7ea4",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  addButton: {
+    marginTop: 8,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: "#0a7ea4",
+    alignItems: "center",
+    justifyContent: "center"
+  }
 });

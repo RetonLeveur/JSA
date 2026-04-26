@@ -1,5 +1,5 @@
 export interface Piece {
-  id: number;
+  id?: number;
   name: string;
   description: string | undefined;
 }

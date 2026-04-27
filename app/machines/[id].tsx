@@ -1,12 +1,26 @@
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { useLocalSearchParams, Stack } from "expo-router";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from "react-native";
+import { useLocalSearchParams, Stack, router } from "expo-router";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useMachine, useDeleteMachine } from "@/hooks/use-machines";
 
 export default function MachineDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const machineId = Number(id);
+
+  const { data: machine, isLoading, isError } = useMachine(machineId);
+  const { mutate: deleteMachine, isPending: isDeleting } = useDeleteMachine();
+
+  const handleDelete = () => {
+    deleteMachine(machineId, { onSuccess: () => router.back() });
+  };
 
   return (
     <SafeAreaProvider>
@@ -17,27 +31,63 @@ export default function MachineDetails() {
               <TouchableOpacity onPress={() => {}}>
                 <IconSymbol name="pencil" size={22} color="#0a7ea4" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => {}}>
-                <IconSymbol name="trash.fill" size={22} color="#e74c3c" />
+              <TouchableOpacity onPress={handleDelete} disabled={isDeleting}>
+                <IconSymbol
+                  name="trash.fill"
+                  size={22}
+                  color={isDeleting ? "#ccc" : "#e74c3c"}
+                />
               </TouchableOpacity>
             </View>
           )
         }}
       />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
-        <ThemedView style={styles.card}>
-          <View style={styles.badge}>
-            <ThemedText type="defaultSemiBold" style={styles.badgeText}>
-              #{id}
+        {isLoading && (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color="#0a7ea4" />
+          </View>
+        )}
+
+        {isError && (
+          <View style={styles.center}>
+            <ThemedText style={styles.errorText}>
+              Failed to load machine.
             </ThemedText>
           </View>
-          <ThemedText type="title" style={styles.name}>
-            Machine {id}
-          </ThemedText>
-          <ThemedText style={styles.description}>
-            Description of Machine {id}
-          </ThemedText>
-        </ThemedView>
+        )}
+
+        {machine && (
+          <ThemedView style={styles.card}>
+            <View style={styles.badge}>
+              <ThemedText type="defaultSemiBold" style={styles.badgeText}>
+                #{machine.id}
+              </ThemedText>
+            </View>
+            <ThemedText type="title" style={styles.name}>
+              {machine.name}
+            </ThemedText>
+            {machine.description ? (
+              <ThemedText style={styles.description}>
+                {machine.description}
+              </ThemedText>
+            ) : null}
+
+            {machine.pieces.length > 0 && (
+              <View style={styles.piecesSection}>
+                <ThemedText type="defaultSemiBold" style={styles.piecesTitle}>
+                  Pieces ({machine.pieces.length})
+                </ThemedText>
+                {machine.pieces.map((piece) => (
+                  <View key={piece.id} style={styles.pieceRow}>
+                    <View style={styles.pieceDot} />
+                    <ThemedText>{piece.name}</ThemedText>
+                  </View>
+                ))}
+              </View>
+            )}
+          </ThemedView>
+        )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -46,6 +96,14 @@ export default function MachineDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  errorText: {
+    opacity: 0.5
   },
   headerButtons: {
     flexDirection: "row",
@@ -78,5 +136,24 @@ const styles = StyleSheet.create({
   },
   description: {
     opacity: 0.6
+  },
+  piecesSection: {
+    marginTop: 4,
+    gap: 8
+  },
+  piecesTitle: {
+    fontSize: 14,
+    opacity: 0.7
+  },
+  pieceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+  pieceDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#0a7ea4"
   }
 });

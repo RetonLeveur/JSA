@@ -1,11 +1,11 @@
 import { Machine } from "./machine";
 
 export interface Hebdomadaire {
-  machines: HebomadaireList[];
+  machines: HebdomadaireList[];
   date: string;
 }
 
-export interface HebomadaireList {
+export interface HebdomadaireList {
   machines: Machine;
   amount: number;
 }

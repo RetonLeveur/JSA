@@ -5,6 +5,7 @@ export const initDB = async (): Promise<void> => {
 
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
 
     CREATE TABLE IF NOT EXISTS piece (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,13 +16,25 @@ export const initDB = async (): Promise<void> => {
     CREATE TABLE IF NOT EXISTS machine (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       name        TEXT    NOT NULL,
-      description TEXT,
+      description TEXT
     );
 
     CREATE TABLE IF NOT EXISTS machine_piece (
       machine_id  INTEGER NOT NULL REFERENCES machine(id) ON DELETE CASCADE,
       piece_id    INTEGER NOT NULL REFERENCES piece(id)   ON DELETE CASCADE,
       PRIMARY KEY (machine_id, piece_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS hebdomadaire (
+      id    INTEGER PRIMARY KEY AUTOINCREMENT,
+      date  TEXT    NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS hebdomadaire_list (
+      hebdomadaire_id  INTEGER NOT NULL REFERENCES hebdomadaire(id) ON DELETE CASCADE,
+      machine_id       INTEGER NOT NULL REFERENCES machine(id)      ON DELETE CASCADE,
+      amount           INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (hebdomadaire_id, machine_id)
     );
 
   `);

@@ -3,7 +3,7 @@ import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Hebdomadaire, HebomadaireList } from "@/types/hebdomadaire";
+import { Hebdomadaire, HebdomadaireList } from "@/types/hebdomadaire";
 
 const temp: Hebdomadaire = {
   date: "2026-04-26",
@@ -94,10 +94,12 @@ export default function HomeScreen() {
         </ThemedView>
         <FlatList
           data={temp.machines}
-          keyExtractor={(item: HebomadaireList) => item.machines.id.toString()}
+          keyExtractor={(item: HebdomadaireList) =>
+            item.machines.id!.toString()
+          }
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({ item }: { item: HebomadaireList }) => (
+          renderItem={({ item }: { item: HebdomadaireList }) => (
             <ThemedView style={styles.card}>
               <View style={styles.cardBody}>
                 <ThemedText type="defaultSemiBold">

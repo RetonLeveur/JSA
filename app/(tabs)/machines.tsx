@@ -1,56 +1,86 @@
-import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  View
+} from "react-native";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Machine } from "@/types/machine";
+import { useMachines } from "@/hooks/use-machines";
 
 export default function MachinesList() {
+  const { data: machines, isLoading, isError } = useMachines();
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <ThemedView style={styles.header}>
           <View>
             <ThemedText type="title">Machines</ThemedText>
-            <ThemedText style={styles.count}>{temp.length} items</ThemedText>
+            <ThemedText style={styles.count}>
+              {machines?.length ?? 0} items
+            </ThemedText>
           </View>
-          <TouchableOpacity onPress={() => {}} style={styles.addButton}>
+          <TouchableOpacity
+            onPress={() => router.push("/machines/add")}
+            style={styles.addButton}
+          >
             <IconSymbol name="plus" size={22} color="#fff" />
           </TouchableOpacity>
         </ThemedView>
-        <FlatList
-          data={temp}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => router.push(`/machines/${item.id}`)}
-            >
-              <ThemedView style={styles.card}>
-                <View style={styles.cardBadge}>
-                  <ThemedText type="defaultSemiBold" style={styles.badgeText}>
-                    #{item.id}
-                  </ThemedText>
-                </View>
-                <View style={styles.cardBody}>
-                  <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
-                  {item.description ? (
-                    <ThemedText style={styles.description}>
-                      {item.description}
+
+        {isLoading && (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color="#0a7ea4" />
+          </View>
+        )}
+
+        {isError && (
+          <View style={styles.center}>
+            <ThemedText style={styles.errorText}>
+              Failed to load machines.
+            </ThemedText>
+          </View>
+        )}
+
+        {!isLoading && !isError && (
+          <FlatList
+            data={machines}
+            keyExtractor={(item) => item.id!.toString()}
+            contentContainerStyle={styles.listContent}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => router.push(`/machines/${item.id}`)}
+              >
+                <ThemedView style={styles.card}>
+                  <View style={styles.cardBadge}>
+                    <ThemedText type="defaultSemiBold" style={styles.badgeText}>
+                      #{item.id}
                     </ThemedText>
-                  ) : null}
-                  <ThemedText style={styles.meta}>
-                    {item.pieces.length} piece
-                    {item.pieces.length !== 1 ? "s" : ""}
-                  </ThemedText>
-                </View>
-              </ThemedView>
-            </TouchableOpacity>
-          )}
-        />
+                  </View>
+                  <View style={styles.cardBody}>
+                    <ThemedText type="defaultSemiBold">{item.name}</ThemedText>
+                    {item.description ? (
+                      <ThemedText style={styles.description}>
+                        {item.description}
+                      </ThemedText>
+                    ) : null}
+                    <ThemedText style={styles.meta}>
+                      {item.pieces.length} piece
+                      {item.pieces.length !== 1 ? "s" : ""}
+                    </ThemedText>
+                  </View>
+                </ThemedView>
+              </TouchableOpacity>
+            )}
+          />
+        )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -67,6 +97,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  errorText: {
+    opacity: 0.5
   },
   listContent: {
     paddingHorizontal: 16,
@@ -124,36 +162,3 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   }
 });
-
-const temp: Machine[] = [
-  {
-    id: 1,
-    name: "Machine 1",
-    description: "Description of Machine 1",
-    pieces: []
-  },
-  {
-    id: 2,
-    name: "Machine 2",
-    description: "Description of Machine 2",
-    pieces: []
-  },
-  {
-    id: 3,
-    name: "Machine 3",
-    description: "Description of Machine 3",
-    pieces: []
-  },
-  {
-    id: 4,
-    name: "Machine 4",
-    description: "Description of Machine 4",
-    pieces: []
-  },
-  {
-    id: 5,
-    name: "Machine 5",
-    description: "Description of Machine 5",
-    pieces: []
-  }
-];

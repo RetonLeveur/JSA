@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -57,61 +58,63 @@ export default function EditPiece() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.keyboardView}
           >
-            <ThemedView style={styles.form}>
-              <View style={styles.field}>
-                <ThemedText type="defaultSemiBold" style={styles.label}>
-                  Name
-                </ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    { backgroundColor: inputBg, color: textColor }
-                  ]}
-                  placeholder="Piece name"
-                  placeholderTextColor={placeholderColor}
-                  value={name}
-                  onChangeText={setName}
-                  autoFocus
-                  returnKeyType="next"
-                />
-              </View>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <ThemedView style={styles.form}>
+                <View style={styles.field}>
+                  <ThemedText type="defaultSemiBold" style={styles.label}>
+                    Name
+                  </ThemedText>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { backgroundColor: inputBg, color: textColor }
+                    ]}
+                    placeholder="Piece name"
+                    placeholderTextColor={placeholderColor}
+                    value={name}
+                    onChangeText={setName}
+                    autoFocus
+                    returnKeyType="next"
+                  />
+                </View>
 
-              <View style={styles.field}>
-                <ThemedText type="defaultSemiBold" style={styles.label}>
-                  Description
-                  <ThemedText style={styles.optional}> (optional)</ThemedText>
-                </ThemedText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    styles.multiline,
-                    { backgroundColor: inputBg, color: textColor }
-                  ]}
-                  placeholder="Description"
-                  placeholderTextColor={placeholderColor}
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                  numberOfLines={3}
-                  returnKeyType="done"
-                />
-              </View>
-            </ThemedView>
+                <View style={styles.field}>
+                  <ThemedText type="defaultSemiBold" style={styles.label}>
+                    Description
+                    <ThemedText style={styles.optional}> (optional)</ThemedText>
+                  </ThemedText>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.multiline,
+                      { backgroundColor: inputBg, color: textColor }
+                    ]}
+                    placeholder="Description"
+                    placeholderTextColor={placeholderColor}
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    numberOfLines={3}
+                    returnKeyType="done"
+                  />
+                </View>
+              </ThemedView>
 
-            <View style={styles.footer}>
               <TouchableOpacity
                 style={[
                   styles.submitButton,
                   (!name.trim() || isPending) && styles.submitDisabled
                 ]}
                 onPress={handleSubmit}
-                disabled={!name.trim() || isPending}
               >
                 <ThemedText style={styles.submitText}>
                   {isPending ? "Saving…" : "Save Changes"}
                 </ThemedText>
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           </KeyboardAvoidingView>
         )}
       </SafeAreaView>
@@ -129,11 +132,14 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   keyboardView: {
-    flex: 1,
-    justifyContent: "space-between"
+    flex: 1
+  },
+  scrollContent: {
+    padding: 16,
+    gap: 12,
+    paddingBottom: 32
   },
   form: {
-    margin: 16,
     borderRadius: 12,
     padding: 16,
     gap: 16,
@@ -164,10 +170,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     minHeight: 80,
     textAlignVertical: "top"
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16
   },
   submitButton: {
     backgroundColor: "#0a7ea4",

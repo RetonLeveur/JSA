@@ -48,18 +48,17 @@ export const get_hebdomadaire = async (): Promise<Hebdomadaire | null> => {
     [row.id]
   );
 
-  const machines: HebdomadaireList[] = await Promise.all(
-    listRows.map(async (lr) => {
-      const pieces = await getPiecesForMachine(database, lr.machine_id);
-      const machine: Machine = {
-        id: lr.machine_id,
-        name: lr.machine_name,
-        description: lr.machine_description ?? undefined,
-        pieces
-      };
-      return { machines: machine, amount: lr.amount };
-    })
-  );
+  const machines: HebdomadaireList[] = [];
+  for (const lr of listRows) {
+    const pieces = await getPiecesForMachine(database, lr.machine_id);
+    const machine: Machine = {
+      id: lr.machine_id,
+      name: lr.machine_name,
+      description: lr.machine_description ?? undefined,
+      pieces
+    };
+    machines.push({ machines: machine, amount: lr.amount });
+  }
 
   return { date: row.date, machines };
 };
@@ -80,12 +79,12 @@ export const new_hebdomadaire = async (
     "INSERT INTO hebdomadaire (date) VALUES (?)",
     [date]
   );
-  const hebId = result.lastInsertRowId;
+  const hebId = Number(result.lastInsertRowId);
 
   for (const entry of list) {
     await database.runAsync(
       "INSERT INTO hebdomadaire_list (hebdomadaire_id, machine_id, amount) VALUES (?, ?, ?)",
-      [hebId, entry.machines.id!, entry.amount]
+      [hebId, Number(entry.machines.id), entry.amount]
     );
   }
 };

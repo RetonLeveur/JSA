@@ -30,14 +30,12 @@ export const create_machine = async (
     "INSERT INTO machine (name, description) VALUES (?, ?)",
     [machine.name, machine.description ?? null]
   );
-  const machineId = result.lastInsertRowId;
-  if (machine.pieces.length > 0) {
-    for (const piece of machine.pieces) {
-      await database.runAsync(
-        "INSERT INTO machine_piece (machine_id, piece_id) VALUES (?, ?)",
-        [machineId, piece.id!]
-      );
-    }
+  const machineId = Number(result.lastInsertRowId);
+  for (const piece of machine.pieces) {
+    await database.runAsync(
+      "INSERT INTO machine_piece (machine_id, piece_id) VALUES (?, ?)",
+      [machineId, Number(piece.id)]
+    );
   }
   return machineId;
 };
@@ -58,12 +56,12 @@ export const get_machines = async (): Promise<Machine[]> => {
   const rows = await database.getAllAsync<MachineRow>(
     "SELECT * FROM machine ORDER BY name ASC"
   );
-  return Promise.all(
-    rows.map(async (row) => {
-      const pieces = await getPiecesForMachine(database, row.id);
-      return { ...row, description: row.description ?? undefined, pieces };
-    })
-  );
+  const machines: Machine[] = [];
+  for (const row of rows) {
+    const pieces = await getPiecesForMachine(database, row.id);
+    machines.push({ ...row, description: row.description ?? undefined, pieces });
+  }
+  return machines;
 };
 
 export const update_machine = async (
@@ -80,7 +78,7 @@ export const update_machine = async (
   for (const piece of machine.pieces) {
     await database.runAsync(
       "INSERT INTO machine_piece (machine_id, piece_id) VALUES (?, ?)",
-      [machine.id, piece.id!]
+      [machine.id, Number(piece.id)]
     );
   }
 };

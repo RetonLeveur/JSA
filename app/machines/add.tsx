@@ -71,9 +71,7 @@ export default function AddMachine() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.keyboardView}
         >
-          {/* Wrapper View with flex:1 so ScrollView gets proper bounds */}
-          <View style={styles.scrollWrapper}>
-            <ScrollView
+          <ScrollView
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
             >
@@ -187,19 +185,16 @@ export default function AddMachine() {
                   );
                 })}
               </ThemedView>
-            </ScrollView>
-          </View>
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.submitButton, !canSubmit && styles.submitDisabled]}
-              onPress={handleSubmit}
-            >
-              <ThemedText style={styles.submitText}>
-                {isPending ? "Saving…" : "Add Machine"}
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[styles.submitButton, !canSubmit && styles.submitDisabled]}
+                onPress={handleSubmit}
+              >
+                <ThemedText style={styles.submitText}>
+                  {isPending ? "Saving…" : "Add Machine"}
+                </ThemedText>
+              </TouchableOpacity>
+            </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -213,18 +208,10 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1
   },
-  scrollWrapper: {
-    flex: 1
-  },
   scrollContent: {
     padding: 16,
     gap: 12,
-    paddingBottom: 8
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16
+    paddingBottom: 32
   },
   form: {
     borderRadius: 12,

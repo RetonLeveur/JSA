@@ -53,6 +53,18 @@ export default function RootLayout() {
           options={{ presentation: "modal", title: "Edit Machine" }}
         />
         <Stack.Screen
+          name="hebdomadaire/new"
+          options={{ presentation: "modal", title: "New Hebdomadaire" }}
+        />
+        <Stack.Screen
+          name="hebdomadaire/add-machine"
+          options={{ presentation: "modal", title: "Add Machine" }}
+        />
+        <Stack.Screen
+          name="hebdomadaire/report"
+          options={{ presentation: "modal", title: "Report" }}
+        />
+        <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}
         />

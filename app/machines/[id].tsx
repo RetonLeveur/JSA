@@ -28,7 +28,7 @@ export default function MachineDetails() {
         options={{
           headerRight: () => (
             <View style={styles.headerButtons}>
-              <TouchableOpacity onPress={() => {}}>
+              <TouchableOpacity onPress={() => router.push(`/machines/edit?id=${machineId}`)}>
                 <IconSymbol name="pencil" size={22} color="#0a7ea4" />
               </TouchableOpacity>
               <TouchableOpacity onPress={handleDelete} disabled={isDeleting}>

@@ -1,6 +1,5 @@
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,36 +8,52 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { Stack, router } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useCreateMachine } from "@/hooks/use-machines";
+import { useMachine, useUpdateMachine } from "@/hooks/use-machines";
 import { usePieces } from "@/hooks/use-pieces";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Piece } from "@/types/piece";
 
-export default function AddMachine() {
+export default function EditMachine() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const machineId = Number(id);
+
+  const { data: machine, isLoading: machineLoading } = useMachine(machineId);
+  const { data: pieces, isLoading: piecesLoading } = usePieces();
+  const { mutate: updateMachine, isPending } = useUpdateMachine();
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedPieceIds, setSelectedPieceIds] = useState<Set<number>>(
     new Set()
   );
 
-  const { data: pieces, isLoading: piecesLoading } = usePieces();
-  const { mutate: createMachine, isPending } = useCreateMachine();
+  useEffect(() => {
+    if (machine) {
+      setName(machine.name);
+      setDescription(machine.description ?? "");
+      setSelectedPieceIds(new Set(machine.pieces.map((p) => p.id!)));
+    }
+  }, [machine]);
 
   const inputBg = useThemeColor({ light: "#f2f2f7", dark: "#2c2c2e" }, "background");
   const textColor = useThemeColor({ light: "#000", dark: "#fff" }, "text");
   const placeholderColor = useThemeColor({ light: "#aaa", dark: "#666" }, "text");
   const borderColor = useThemeColor({ light: "#e5e5ea", dark: "#3a3a3c" }, "background");
 
-  const togglePiece = (id: number) => {
+  const togglePiece = (pieceId: number) => {
     setSelectedPieceIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(pieceId)) {
+        next.delete(pieceId);
+      } else {
+        next.add(pieceId);
+      }
       return next;
     });
   };
@@ -48,32 +63,34 @@ export default function AddMachine() {
     const selectedPieces: Piece[] = (pieces ?? []).filter((p) =>
       selectedPieceIds.has(p.id!)
     );
-    createMachine(
+    updateMachine(
       {
+        id: machineId,
         name: name.trim(),
         description: description.trim() || undefined,
         pieces: selectedPieces
       },
-      {
-        onSuccess: () => router.back(),
-        onError: (e) => Alert.alert("Error", String(e))
-      }
+      { onSuccess: () => router.back() }
     );
   };
 
-  const canSubmit = name.trim().length > 0 && !isPending;
+  const isLoading = machineLoading || piecesLoading;
 
   return (
     <SafeAreaProvider>
-      <Stack.Screen options={{ title: "Add Machine" }} />
+      <Stack.Screen options={{ title: "Edit Machine" }} />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardView}
-        >
-          {/* Wrapper View with flex:1 so ScrollView gets proper bounds */}
-          <View style={styles.scrollWrapper}>
+        {isLoading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color="#0a7ea4" />
+          </View>
+        ) : (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardView}
+          >
             <ScrollView
+              style={styles.scroll}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
             >
@@ -131,76 +148,74 @@ export default function AddMachine() {
                   )}
                 </View>
 
-                {piecesLoading && (
-                  <ActivityIndicator
-                    size="small"
-                    color="#0a7ea4"
-                    style={styles.loader}
-                  />
-                )}
-
-                {!piecesLoading && (!pieces || pieces.length === 0) && (
+                {!pieces || pieces.length === 0 ? (
                   <ThemedText style={styles.emptyText}>
                     No pieces available. Add pieces first.
                   </ThemedText>
-                )}
-
-                {(pieces ?? []).map((piece, index) => {
-                  const selected = selectedPieceIds.has(piece.id!);
-                  return (
-                    <TouchableOpacity
-                      key={piece.id}
-                      onPress={() => togglePiece(piece.id!)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={[
-                          styles.pieceRow,
-                          index < (pieces?.length ?? 0) - 1 && {
-                            borderBottomWidth: 1,
-                            borderBottomColor: borderColor
-                          }
-                        ]}
+                ) : (
+                  pieces.map((piece, index) => {
+                    const selected = selectedPieceIds.has(piece.id!);
+                    return (
+                      <TouchableOpacity
+                        key={piece.id}
+                        onPress={() => togglePiece(piece.id!)}
+                        activeOpacity={0.7}
                       >
-                        <View style={styles.pieceInfo}>
-                          <ThemedText type="defaultSemiBold">
-                            {piece.name}
-                          </ThemedText>
-                          {piece.description ? (
-                            <ThemedText style={styles.pieceDesc}>
-                              {piece.description}
-                            </ThemedText>
-                          ) : null}
-                        </View>
                         <View
                           style={[
-                            styles.checkbox,
-                            selected && styles.checkboxSelected
+                            styles.pieceRow,
+                            index < pieces.length - 1 && {
+                              borderBottomWidth: 1,
+                              borderBottomColor: borderColor
+                            }
                           ]}
                         >
-                          {selected && (
-                            <IconSymbol name="checkmark" size={13} color="#fff" />
-                          )}
+                          <View style={styles.pieceInfo}>
+                            <ThemedText type="defaultSemiBold">
+                              {piece.name}
+                            </ThemedText>
+                            {piece.description ? (
+                              <ThemedText style={styles.pieceDesc}>
+                                {piece.description}
+                              </ThemedText>
+                            ) : null}
+                          </View>
+                          <View
+                            style={[
+                              styles.checkbox,
+                              selected && styles.checkboxSelected
+                            ]}
+                          >
+                            {selected && (
+                              <IconSymbol
+                                name="checkmark"
+                                size={13}
+                                color="#fff"
+                              />
+                            )}
+                          </View>
                         </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
               </ThemedView>
-            </ScrollView>
-          </View>
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.submitButton, !canSubmit && styles.submitDisabled]}
-              onPress={handleSubmit}
-            >
-              <ThemedText style={styles.submitText}>
-                {isPending ? "Saving…" : "Add Machine"}
-              </ThemedText>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  (!name.trim() || isPending) && styles.submitDisabled
+                ]}
+                onPress={handleSubmit}
+                disabled={!name.trim() || isPending}
+              >
+                <ThemedText style={styles.submitText}>
+                  {isPending ? "Saving…" : "Save Changes"}
+                </ThemedText>
+              </TouchableOpacity>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -210,21 +225,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1
   },
-  keyboardView: {
-    flex: 1
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
   },
-  scrollWrapper: {
+  keyboardView: {
     flex: 1
   },
   scrollContent: {
     padding: 16,
     gap: 12,
-    paddingBottom: 8
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16
+    paddingBottom: 32
   },
   form: {
     borderRadius: 12,
@@ -262,9 +274,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "600"
-  },
-  loader: {
-    marginVertical: 12
   },
   emptyText: {
     fontSize: 13,

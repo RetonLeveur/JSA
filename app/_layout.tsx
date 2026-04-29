@@ -49,6 +49,10 @@ export default function RootLayout() {
           options={{ presentation: "modal", title: "Add Machine" }}
         />
         <Stack.Screen
+          name="machines/edit"
+          options={{ presentation: "modal", title: "Edit Machine" }}
+        />
+        <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}
         />

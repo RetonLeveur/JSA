@@ -8,20 +8,23 @@ export const initDB = async (): Promise<void> => {
     PRAGMA foreign_keys = ON;
 
     CREATE TABLE IF NOT EXISTS piece (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      name        TEXT    NOT NULL,
-      description TEXT
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      name          TEXT    NOT NULL,
+      description   TEXT,
+      estimate_time INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS machine (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      name        TEXT    NOT NULL,
-      description TEXT
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      name          TEXT    NOT NULL,
+      description   TEXT,
+      estimate_time INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS machine_piece (
       machine_id  INTEGER NOT NULL REFERENCES machine(id) ON DELETE CASCADE,
       piece_id    INTEGER NOT NULL REFERENCES piece(id)   ON DELETE CASCADE,
+      quantity    INTEGER NOT NULL DEFAULT 1,
       PRIMARY KEY (machine_id, piece_id)
     );
 
@@ -38,4 +41,18 @@ export const initDB = async (): Promise<void> => {
     );
 
   `);
+
+  try {
+    await db.runAsync(
+      "ALTER TABLE machine_piece ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1"
+    );
+  } catch {}
+
+  try {
+    await db.runAsync("ALTER TABLE machine ADD COLUMN estimate_time INTEGER");
+  } catch {}
+
+  try {
+    await db.runAsync("ALTER TABLE piece ADD COLUMN estimate_time INTEGER");
+  } catch {}
 };

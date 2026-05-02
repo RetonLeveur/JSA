@@ -8,7 +8,7 @@ import {
   View
 } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -24,11 +24,15 @@ export default function EditPiece() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [estimateTime, setEstimateTime] = useState("");
 
   useEffect(() => {
     if (piece) {
       setName(piece.name);
       setDescription(piece.description ?? "");
+      setEstimateTime(
+        piece.estimate_time != null ? String(piece.estimate_time) : ""
+      );
     }
   }, [piece]);
 
@@ -38,14 +42,20 @@ export default function EditPiece() {
 
   const handleSubmit = () => {
     if (!name.trim()) return;
+    const parsedTime = parseInt(estimateTime, 10);
     updatePiece(
-      { id: pieceId, name: name.trim(), description: description.trim() || undefined },
+      {
+        id: pieceId,
+        name: name.trim(),
+        description: description.trim() || undefined,
+        estimate_time: Number.isFinite(parsedTime) ? parsedTime : undefined
+      },
       { onSuccess: () => router.back() }
     );
   };
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen options={{ title: "Edit Piece" }} />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         {isLoading ? (
@@ -96,6 +106,25 @@ export default function EditPiece() {
                   returnKeyType="done"
                 />
               </View>
+
+              <View style={styles.field}>
+                <ThemedText type="defaultSemiBold" style={styles.label}>
+                  Estimate time
+                  <ThemedText style={styles.optional}> (minutes, optional)</ThemedText>
+                </ThemedText>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { backgroundColor: inputBg, color: textColor }
+                  ]}
+                  placeholder="e.g. 5"
+                  placeholderTextColor={placeholderColor}
+                  value={estimateTime}
+                  onChangeText={setEstimateTime}
+                  keyboardType="numeric"
+                  returnKeyType="done"
+                />
+              </View>
             </ThemedView>
 
             <View style={styles.footer}>
@@ -115,7 +144,7 @@ export default function EditPiece() {
           </KeyboardAvoidingView>
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 

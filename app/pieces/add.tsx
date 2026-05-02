@@ -7,7 +7,7 @@ import {
   View
 } from "react-native";
 import { Stack, router } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -17,6 +17,7 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 export default function AddPiece() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [estimateTime, setEstimateTime] = useState("");
 
   const { mutate: createPiece, isPending } = useCreatePiece();
 
@@ -26,14 +27,19 @@ export default function AddPiece() {
 
   const handleSubmit = () => {
     if (!name.trim()) return;
+    const parsedTime = parseInt(estimateTime, 10);
     createPiece(
-      { name: name.trim(), description: description.trim() || undefined },
+      {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        estimate_time: Number.isFinite(parsedTime) ? parsedTime : undefined
+      },
       { onSuccess: () => router.back() }
     );
   };
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen options={{ title: "Add Piece" }} />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <KeyboardAvoidingView
@@ -79,6 +85,25 @@ export default function AddPiece() {
                 returnKeyType="done"
               />
             </View>
+
+            <View style={styles.field}>
+              <ThemedText type="defaultSemiBold" style={styles.label}>
+                Estimate time
+                <ThemedText style={styles.optional}> (minutes, optional)</ThemedText>
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: inputBg, color: textColor }
+                ]}
+                placeholder="e.g. 5"
+                placeholderTextColor={placeholderColor}
+                value={estimateTime}
+                onChangeText={setEstimateTime}
+                keyboardType="numeric"
+                returnKeyType="done"
+              />
+            </View>
           </ThemedView>
 
           <View style={styles.footer}>
@@ -97,7 +122,7 @@ export default function AddPiece() {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 

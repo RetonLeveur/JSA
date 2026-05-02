@@ -9,7 +9,7 @@ import {
   View
 } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -29,15 +29,21 @@ export default function EditMachine() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedPieceIds, setSelectedPieceIds] = useState<Set<number>>(
-    new Set()
+  const [estimateTime, setEstimateTime] = useState("");
+  const [pieceQuantities, setPieceQuantities] = useState<Map<number, number>>(
+    new Map()
   );
 
   useEffect(() => {
     if (machine) {
       setName(machine.name);
       setDescription(machine.description ?? "");
-      setSelectedPieceIds(new Set(machine.pieces.map((p) => p.id!)));
+      setEstimateTime(
+        machine.estimate_time != null ? String(machine.estimate_time) : ""
+      );
+      setPieceQuantities(
+        new Map(machine.pieces.map((p) => [p.id!, p.quantity ?? 1]))
+      );
     }
   }, [machine]);
 
@@ -47,27 +53,34 @@ export default function EditMachine() {
   const borderColor = useThemeColor({ light: "#e5e5ea", dark: "#3a3a3c" }, "background");
 
   const togglePiece = (pieceId: number) => {
-    setSelectedPieceIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(pieceId)) {
-        next.delete(pieceId);
-      } else {
-        next.add(pieceId);
-      }
+    setPieceQuantities((prev) => {
+      const next = new Map(prev);
+      next.has(pieceId) ? next.delete(pieceId) : next.set(pieceId, 1);
+      return next;
+    });
+  };
+
+  const changeQty = (pieceId: number, delta: number) => {
+    setPieceQuantities((prev) => {
+      const next = new Map(prev);
+      const qty = Math.max(1, (next.get(pieceId) ?? 1) + delta);
+      next.set(pieceId, qty);
       return next;
     });
   };
 
   const handleSubmit = () => {
     if (!name.trim()) return;
-    const selectedPieces: Piece[] = (pieces ?? []).filter((p) =>
-      selectedPieceIds.has(p.id!)
-    );
+    const selectedPieces: Piece[] = (pieces ?? [])
+      .filter((p) => pieceQuantities.has(p.id!))
+      .map((p) => ({ ...p, quantity: pieceQuantities.get(p.id!) ?? 1 }));
+    const parsedTime = parseInt(estimateTime, 10);
     updateMachine(
       {
         id: machineId,
         name: name.trim(),
         description: description.trim() || undefined,
+        estimate_time: Number.isFinite(parsedTime) ? parsedTime : undefined,
         pieces: selectedPieces
       },
       { onSuccess: () => router.back() }
@@ -77,7 +90,7 @@ export default function EditMachine() {
   const isLoading = machineLoading || piecesLoading;
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen options={{ title: "Edit Machine" }} />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         {isLoading ? (
@@ -132,6 +145,25 @@ export default function EditMachine() {
                     returnKeyType="done"
                   />
                 </View>
+
+                <View style={styles.field}>
+                  <ThemedText type="defaultSemiBold" style={styles.label}>
+                    Estimate time
+                    <ThemedText style={styles.optional}> (minutes, optional)</ThemedText>
+                  </ThemedText>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      { backgroundColor: inputBg, color: textColor }
+                    ]}
+                    placeholder="e.g. 30"
+                    placeholderTextColor={placeholderColor}
+                    value={estimateTime}
+                    onChangeText={setEstimateTime}
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                  />
+                </View>
               </ThemedView>
 
               <ThemedView style={styles.piecesCard}>
@@ -139,10 +171,10 @@ export default function EditMachine() {
                   <ThemedText type="defaultSemiBold" style={styles.label}>
                     Pieces
                   </ThemedText>
-                  {selectedPieceIds.size > 0 && (
+                  {pieceQuantities.size > 0 && (
                     <View style={styles.badge}>
                       <ThemedText style={styles.badgeText}>
-                        {selectedPieceIds.size} selected
+                        {pieceQuantities.size} selected
                       </ThemedText>
                     </View>
                   )}
@@ -154,22 +186,34 @@ export default function EditMachine() {
                   </ThemedText>
                 ) : (
                   pieces.map((piece, index) => {
-                    const selected = selectedPieceIds.has(piece.id!);
+                    const selected = pieceQuantities.has(piece.id!);
+                    const qty = pieceQuantities.get(piece.id!) ?? 1;
                     return (
-                      <TouchableOpacity
+                      <View
                         key={piece.id}
-                        onPress={() => togglePiece(piece.id!)}
-                        activeOpacity={0.7}
+                        style={[
+                          styles.pieceRow,
+                          index < pieces.length - 1 && {
+                            borderBottomWidth: 1,
+                            borderBottomColor: borderColor
+                          }
+                        ]}
                       >
-                        <View
-                          style={[
-                            styles.pieceRow,
-                            index < pieces.length - 1 && {
-                              borderBottomWidth: 1,
-                              borderBottomColor: borderColor
-                            }
-                          ]}
+                        <TouchableOpacity
+                          style={styles.pieceLeft}
+                          onPress={() => togglePiece(piece.id!)}
+                          activeOpacity={0.7}
                         >
+                          <View
+                            style={[
+                              styles.checkbox,
+                              selected && styles.checkboxSelected
+                            ]}
+                          >
+                            {selected && (
+                              <IconSymbol name="checkmark" size={13} color="#fff" />
+                            )}
+                          </View>
                           <View style={styles.pieceInfo}>
                             <ThemedText type="defaultSemiBold">
                               {piece.name}
@@ -180,22 +224,32 @@ export default function EditMachine() {
                               </ThemedText>
                             ) : null}
                           </View>
-                          <View
-                            style={[
-                              styles.checkbox,
-                              selected && styles.checkboxSelected
-                            ]}
-                          >
-                            {selected && (
+                        </TouchableOpacity>
+                        {selected && (
+                          <View style={styles.stepper}>
+                            <TouchableOpacity
+                              style={styles.stepperButton}
+                              onPress={() => changeQty(piece.id!, -1)}
+                              disabled={qty <= 1}
+                            >
                               <IconSymbol
-                                name="checkmark"
+                                name="minus"
                                 size={13}
-                                color="#fff"
+                                color={qty <= 1 ? "#c7c7cc" : "#0a7ea4"}
                               />
-                            )}
+                            </TouchableOpacity>
+                            <ThemedText type="defaultSemiBold" style={styles.stepperValue}>
+                              {qty}
+                            </ThemedText>
+                            <TouchableOpacity
+                              style={styles.stepperButton}
+                              onPress={() => changeQty(piece.id!, 1)}
+                            >
+                              <IconSymbol name="plus" size={13} color="#0a7ea4" />
+                            </TouchableOpacity>
                           </View>
-                        </View>
-                      </TouchableOpacity>
+                        )}
+                      </View>
                     );
                   })
                 )}
@@ -217,7 +271,7 @@ export default function EditMachine() {
           </KeyboardAvoidingView>
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 
@@ -283,12 +337,40 @@ const styles = StyleSheet.create({
   pieceRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 11,
-    gap: 12
+    paddingVertical: 10,
+    gap: 8
+  },
+  pieceLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
   },
   pieceInfo: {
     flex: 1,
     gap: 2
+  },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1.5,
+    borderColor: "#0a7ea4",
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 3
+  },
+  stepperButton: {
+    width: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  stepperValue: {
+    fontSize: 13,
+    minWidth: 16,
+    textAlign: "center",
+    color: "#0a7ea4"
   },
   pieceDesc: {
     fontSize: 12,

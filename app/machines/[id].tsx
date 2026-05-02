@@ -5,7 +5,7 @@ import {
   View
 } from "react-native";
 import { useLocalSearchParams, Stack, router } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -23,7 +23,7 @@ export default function MachineDetails() {
   };
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen
         options={{
           headerRight: () => (
@@ -73,6 +73,15 @@ export default function MachineDetails() {
               </ThemedText>
             ) : null}
 
+            {machine.estimate_time != null && (
+              <View style={styles.estimateRow}>
+                <IconSymbol name="clock" size={14} color="#0a7ea4" />
+                <ThemedText style={styles.estimateText}>
+                  {machine.estimate_time} min
+                </ThemedText>
+              </View>
+            )}
+
             {machine.pieces.length > 0 && (
               <View style={styles.piecesSection}>
                 <ThemedText type="defaultSemiBold" style={styles.piecesTitle}>
@@ -81,7 +90,12 @@ export default function MachineDetails() {
                 {machine.pieces.map((piece) => (
                   <View key={piece.id} style={styles.pieceRow}>
                     <View style={styles.pieceDot} />
-                    <ThemedText>{piece.name}</ThemedText>
+                    <ThemedText style={styles.pieceName}>{piece.name}</ThemedText>
+                    <View style={styles.qtyBadge}>
+                      <ThemedText type="defaultSemiBold" style={styles.qtyText}>
+                        × {piece.quantity ?? 1}
+                      </ThemedText>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -89,7 +103,7 @@ export default function MachineDetails() {
           </ThemedView>
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 
@@ -137,6 +151,17 @@ const styles = StyleSheet.create({
   description: {
     opacity: 0.6
   },
+  estimateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4
+  },
+  estimateText: {
+    color: "#0a7ea4",
+    fontSize: 14,
+    fontWeight: "600"
+  },
   piecesSection: {
     marginTop: 4,
     gap: 8
@@ -155,5 +180,21 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: "#0a7ea4"
+  },
+  pieceName: {
+    flex: 1
+  },
+  qtyBadge: {
+    minWidth: 36,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: "#0a7ea4",
+    alignItems: "center"
+  },
+  qtyText: {
+    color: "#0a7ea4",
+    fontSize: 13
   }
 });

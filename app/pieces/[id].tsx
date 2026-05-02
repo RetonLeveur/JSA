@@ -5,7 +5,7 @@ import {
   View
 } from "react-native";
 import { useLocalSearchParams, Stack, router } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -23,7 +23,7 @@ export default function PieceDetails() {
   };
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen
         options={{
           headerRight: () => (
@@ -72,10 +72,19 @@ export default function PieceDetails() {
                 {piece.description}
               </ThemedText>
             ) : null}
+
+            {piece.estimate_time != null && (
+              <View style={styles.estimateRow}>
+                <IconSymbol name="clock" size={14} color="#0a7ea4" />
+                <ThemedText style={styles.estimateText}>
+                  {piece.estimate_time} min
+                </ThemedText>
+              </View>
+            )}
           </ThemedView>
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 
@@ -122,5 +131,16 @@ const styles = StyleSheet.create({
   },
   description: {
     opacity: 0.6
+  },
+  estimateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4
+  },
+  estimateText: {
+    color: "#0a7ea4",
+    fontSize: 14,
+    fontWeight: "600"
   }
 });

@@ -1,21 +1,19 @@
 import { StyleSheet } from "react-native";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 
 export default function InventaireScreen() {
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        <ThemedView style={styles.content}>
-          <ThemedText type="title">Inventaire</ThemedText>
-          <ThemedText style={styles.subtitle}>🚧 En cours de développement</ThemedText>
-          <ThemedText style={styles.description}>
-            Cette section sera disponible prochainement.
-          </ThemedText>
-        </ThemedView>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <SafeAreaView style={styles.container}>
+      <ThemedView style={styles.content}>
+        <ThemedText type="title">Inventaire</ThemedText>
+        <ThemedText style={styles.subtitle}>🚧 En cours de développement</ThemedText>
+        <ThemedText style={styles.description}>
+          Cette section sera disponible prochainement.
+        </ThemedText>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 

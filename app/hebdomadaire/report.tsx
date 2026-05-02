@@ -5,14 +5,14 @@ import {
   View
 } from "react-native";
 import { Stack } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useHebdomadaire } from "@/hooks/use-hebdomadaire";
 import { HebdomadaireList } from "@/types/hebdomadaire";
 import { Piece } from "@/types/piece";
 
-type PieceTotal = { piece: Piece; quantity: number };
+type PieceTotal = { piece: Piece; quantity: number; time: number };
 
 function aggregatePieces(machines: HebdomadaireList[]): PieceTotal[] {
   const totals = new Map<string, PieceTotal>();
@@ -20,17 +20,27 @@ function aggregatePieces(machines: HebdomadaireList[]): PieceTotal[] {
     if (entry.amount <= 0) continue;
     for (const piece of entry.machines.pieces) {
       const key = piece.id != null ? `id:${piece.id}` : `name:${piece.name}`;
+      const used = (piece.quantity ?? 1) * entry.amount;
+      const time = used * (piece.estimate_time ?? 0);
       const existing = totals.get(key);
       if (existing) {
-        existing.quantity += entry.amount;
+        existing.quantity += used;
+        existing.time += time;
       } else {
-        totals.set(key, { piece, quantity: entry.amount });
+        totals.set(key, { piece, quantity: used, time });
       }
     }
   }
   return Array.from(totals.values()).sort((a, b) =>
     a.piece.name.localeCompare(b.piece.name)
   );
+}
+
+function fmtMin(n: number): string {
+  if (n < 60) return `${n} min`;
+  const h = Math.floor(n / 60);
+  const m = n % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}min`;
 }
 
 export default function HebdomadaireReport() {
@@ -44,9 +54,15 @@ export default function HebdomadaireReport() {
     0
   );
   const totalPiecesBuilt = pieceTotals.reduce((sum, p) => sum + p.quantity, 0);
+  const totalMachineTime = producedMachines.reduce(
+    (sum, m) => sum + m.amount * (m.machines.estimate_time ?? 0),
+    0
+  );
+  const totalPieceTime = pieceTotals.reduce((sum, p) => sum + p.time, 0);
+  const totalTime = totalMachineTime + totalPieceTime;
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen options={{ title: "Report" }} />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         {isLoading && (
@@ -121,51 +137,83 @@ export default function HebdomadaireReport() {
                 <ThemedText style={styles.sectionTitle}>
                   By machine
                 </ThemedText>
-                {producedMachines.map((entry) => (
-                  <ThemedView
-                    key={entry.machines.id ?? entry.machines.name}
-                    style={styles.card}
-                  >
-                    <View style={styles.machineHeader}>
-                      <ThemedText
-                        type="defaultSemiBold"
-                        style={styles.machineName}
-                      >
-                        {entry.machines.name}
-                      </ThemedText>
-                      <View style={styles.amountBadge}>
-                        <ThemedText style={styles.amountBadgeText}>
-                          × {entry.amount}
+                {producedMachines.map((entry) => {
+                  const machineEst = entry.machines.estimate_time ?? 0;
+                  const machineTotalTime = machineEst * entry.amount;
+                  return (
+                    <ThemedView
+                      key={entry.machines.id ?? entry.machines.name}
+                      style={styles.card}
+                    >
+                      <View style={styles.machineHeader}>
+                        <ThemedText
+                          type="defaultSemiBold"
+                          style={styles.machineName}
+                        >
+                          {entry.machines.name}
                         </ThemedText>
+                        <View style={styles.amountBadge}>
+                          <ThemedText style={styles.amountBadgeText}>
+                            × {entry.amount}
+                          </ThemedText>
+                        </View>
                       </View>
-                    </View>
 
-                    {entry.machines.pieces.length === 0 ? (
-                      <ThemedText style={styles.noPieces}>
-                        No pieces defined for this machine.
-                      </ThemedText>
-                    ) : (
-                      <View style={styles.piecesList}>
-                        {entry.machines.pieces.map((piece, idx) => (
-                          <View
-                            key={piece.id ?? `${piece.name}-${idx}`}
-                            style={styles.pieceRow}
-                          >
-                            <ThemedText style={styles.pieceName}>
-                              {piece.name}
-                            </ThemedText>
+                      {machineEst > 0 && (
+                        <View style={styles.machineTimeRow}>
+                          <ThemedText style={styles.metaLabel}>
+                            Machine time
+                          </ThemedText>
+                          <ThemedText style={styles.metaValue}>
+                            {fmtMin(machineEst)} × {entry.amount} ={" "}
                             <ThemedText
                               type="defaultSemiBold"
-                              style={styles.pieceAmount}
+                              style={styles.metaTotal}
                             >
-                              {entry.amount}
+                              {fmtMin(machineTotalTime)}
                             </ThemedText>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </ThemedView>
-                ))}
+                          </ThemedText>
+                        </View>
+                      )}
+
+                      {entry.machines.pieces.length === 0 ? (
+                        <ThemedText style={styles.noPieces}>
+                          No pieces defined for this machine.
+                        </ThemedText>
+                      ) : (
+                        <View style={styles.piecesList}>
+                          {entry.machines.pieces.map((piece, idx) => {
+                            const used = (piece.quantity ?? 1) * entry.amount;
+                            const pieceTime = used * (piece.estimate_time ?? 0);
+                            return (
+                              <View
+                                key={piece.id ?? `${piece.name}-${idx}`}
+                                style={styles.pieceRow}
+                              >
+                                <View style={styles.pieceInfo}>
+                                  <ThemedText style={styles.pieceName}>
+                                    {piece.name}
+                                  </ThemedText>
+                                  {pieceTime > 0 && (
+                                    <ThemedText style={styles.pieceSub}>
+                                      {fmtMin(pieceTime)}
+                                    </ThemedText>
+                                  )}
+                                </View>
+                                <ThemedText
+                                  type="defaultSemiBold"
+                                  style={styles.pieceAmount}
+                                >
+                                  {used}
+                                </ThemedText>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </ThemedView>
+                  );
+                })}
 
                 {pieceTotals.length > 0 && (
                   <>
@@ -179,12 +227,19 @@ export default function HebdomadaireReport() {
                             key={entry.piece.id ?? `${entry.piece.name}-${idx}`}
                             style={styles.pieceRow}
                           >
-                            <ThemedText
-                              type="defaultSemiBold"
-                              style={styles.pieceName}
-                            >
-                              {entry.piece.name}
-                            </ThemedText>
+                            <View style={styles.pieceInfo}>
+                              <ThemedText
+                                type="defaultSemiBold"
+                                style={styles.pieceName}
+                              >
+                                {entry.piece.name}
+                              </ThemedText>
+                              {entry.time > 0 && (
+                                <ThemedText style={styles.pieceSub}>
+                                  {fmtMin(entry.time)}
+                                </ThemedText>
+                              )}
+                            </View>
                             <View style={styles.totalBadge}>
                               <ThemedText style={styles.totalBadgeText}>
                                 {entry.quantity}
@@ -196,12 +251,56 @@ export default function HebdomadaireReport() {
                     </ThemedView>
                   </>
                 )}
+
+                {totalTime > 0 && (
+                  <>
+                    <ThemedText style={styles.sectionTitle}>Time</ThemedText>
+                    <ThemedView style={styles.card}>
+                      <View style={styles.timeRow}>
+                        <ThemedText style={styles.timeLabel}>
+                          Total machine time
+                        </ThemedText>
+                        <ThemedText
+                          type="defaultSemiBold"
+                          style={styles.timeValue}
+                        >
+                          {fmtMin(totalMachineTime)}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.timeRow}>
+                        <ThemedText style={styles.timeLabel}>
+                          Total piece time
+                        </ThemedText>
+                        <ThemedText
+                          type="defaultSemiBold"
+                          style={styles.timeValue}
+                        >
+                          {fmtMin(totalPieceTime)}
+                        </ThemedText>
+                      </View>
+                      <View style={[styles.timeRow, styles.timeRowTotal]}>
+                        <ThemedText
+                          type="defaultSemiBold"
+                          style={styles.timeLabelTotal}
+                        >
+                          Total time
+                        </ThemedText>
+                        <ThemedText
+                          type="defaultSemiBold"
+                          style={styles.timeValueTotal}
+                        >
+                          {fmtMin(totalTime)}
+                        </ThemedText>
+                      </View>
+                    </ThemedView>
+                  </>
+                )}
               </>
             )}
           </ScrollView>
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 
@@ -329,15 +428,68 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#c7c7cc"
   },
-  pieceName: {
+  pieceInfo: {
     flex: 1,
+    gap: 1
+  },
+  pieceName: {
     fontSize: 14
+  },
+  pieceSub: {
+    fontSize: 11,
+    opacity: 0.5
   },
   pieceAmount: {
     color: "#0a7ea4",
     fontSize: 14,
     minWidth: 32,
     textAlign: "right"
+  },
+  machineTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: -4
+  },
+  metaLabel: {
+    fontSize: 12,
+    opacity: 0.5
+  },
+  metaValue: {
+    fontSize: 12,
+    opacity: 0.7
+  },
+  metaTotal: {
+    color: "#0a7ea4",
+    fontSize: 12
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 6
+  },
+  timeLabel: {
+    fontSize: 14,
+    opacity: 0.7
+  },
+  timeValue: {
+    fontSize: 14,
+    color: "#0a7ea4"
+  },
+  timeRowTotal: {
+    marginTop: 4,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#c7c7cc"
+  },
+  timeLabelTotal: {
+    fontSize: 15
+  },
+  timeValueTotal: {
+    fontSize: 17,
+    color: "#0a7ea4"
   },
   totalBadge: {
     minWidth: 36,

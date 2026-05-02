@@ -8,6 +8,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -30,6 +31,7 @@ export default function RootLayout() {
   if (!dbReady) return <View style={{ flex: 1 }} />;
 
   return (
+    <SafeAreaProvider>
     <QueryClientProvider client={queryClient}>
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
@@ -72,5 +74,6 @@ export default function RootLayout() {
       <StatusBar style="auto" />
     </ThemeProvider>
     </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

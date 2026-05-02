@@ -11,22 +11,33 @@ type ListRow = {
   amount: number;
   machine_name: string;
   machine_description: string | null;
+  machine_estimate_time: number | null;
 };
-type PieceRow = { id: number; name: string; description: string | null };
+type PieceRow = {
+  id: number;
+  name: string;
+  description: string | null;
+  estimate_time: number | null;
+  quantity: number;
+};
 
 const getPiecesForMachine = async (
   database: SQLite.SQLiteDatabase,
   machineId: number
 ): Promise<Piece[]> => {
   const rows = await database.getAllAsync<PieceRow>(
-    `SELECT p.id, p.name, p.description
+    `SELECT p.id, p.name, p.description, p.estimate_time, mp.quantity
      FROM piece p
      INNER JOIN machine_piece mp ON mp.piece_id = p.id
      WHERE mp.machine_id = ?
      ORDER BY p.name ASC`,
     [machineId]
   );
-  return rows.map((r) => ({ ...r, description: r.description ?? undefined }));
+  return rows.map((r) => ({
+    ...r,
+    description: r.description ?? undefined,
+    estimate_time: r.estimate_time ?? undefined
+  }));
 };
 
 export const get_hebdomadaire = async (): Promise<Hebdomadaire | null> => {
@@ -40,7 +51,8 @@ export const get_hebdomadaire = async (): Promise<Hebdomadaire | null> => {
   const listRows = await database.getAllAsync<ListRow>(
     `SELECT hl.machine_id, hl.amount,
             m.name  AS machine_name,
-            m.description AS machine_description
+            m.description AS machine_description,
+            m.estimate_time AS machine_estimate_time
      FROM hebdomadaire_list hl
      INNER JOIN machine m ON m.id = hl.machine_id
      WHERE hl.hebdomadaire_id = ?
@@ -55,6 +67,7 @@ export const get_hebdomadaire = async (): Promise<Hebdomadaire | null> => {
       id: lr.machine_id,
       name: lr.machine_name,
       description: lr.machine_description ?? undefined,
+      estimate_time: lr.machine_estimate_time ?? undefined,
       pieces
     };
     machines.push({ machines: machine, amount: lr.amount });
@@ -70,23 +83,23 @@ export const new_hebdomadaire = async (
 ): Promise<void> => {
   const database = await db();
 
-  // Explicit delete order avoids relying on ON DELETE CASCADE
-  // (PRAGMA foreign_keys is OFF on new connections by default).
-  await database.runAsync("DELETE FROM hebdomadaire_list");
-  await database.runAsync("DELETE FROM hebdomadaire");
+  await database.withTransactionAsync(async () => {
+    await database.runAsync("DELETE FROM hebdomadaire_list");
+    await database.runAsync("DELETE FROM hebdomadaire");
 
-  const result = await database.runAsync(
-    "INSERT INTO hebdomadaire (date) VALUES (?)",
-    [date]
-  );
-  const hebId = Number(result.lastInsertRowId);
-
-  for (const entry of list) {
-    await database.runAsync(
-      "INSERT INTO hebdomadaire_list (hebdomadaire_id, machine_id, amount) VALUES (?, ?, ?)",
-      [hebId, Number(entry.machines.id), entry.amount]
+    const result = await database.runAsync(
+      "INSERT INTO hebdomadaire (date) VALUES (?)",
+      [date]
     );
-  }
+    const hebId = Number(result.lastInsertRowId);
+
+    for (const entry of list) {
+      await database.runAsync(
+        "INSERT INTO hebdomadaire_list (hebdomadaire_id, machine_id, amount) VALUES (?, ?, ?)",
+        [hebId, Number(entry.machines.id), Number(entry.amount)]
+      );
+    }
+  });
 };
 
 export const update_hebdomadaire_amount = async (
@@ -114,7 +127,7 @@ export const add_hebdomadaire = async (
   if (!row) return;
   await database.runAsync(
     "INSERT OR IGNORE INTO hebdomadaire_list (hebdomadaire_id, machine_id, amount) VALUES (?, ?, ?)",
-    [row.id, machine.id!, amount]
+    [row.id, Number(machine.id), Number(amount)]
   );
 };
 
@@ -128,6 +141,6 @@ export const remove_hebdomadaire_machine = async (
   if (!row) return;
   await database.runAsync(
     "DELETE FROM hebdomadaire_list WHERE hebdomadaire_id = ? AND machine_id = ?",
-    [row.id, machineId]
+    [row.id, Number(machineId)]
   );
 };

@@ -7,7 +7,7 @@ import {
   View
 } from "react-native";
 import { Stack, router } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -43,7 +43,7 @@ export default function AddHebdomadaireMachine() {
   const isLoading = hebLoading || machinesLoading;
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen options={{ title: "Add Machine" }} />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -84,7 +84,7 @@ export default function AddHebdomadaireMachine() {
           </ThemedView>
         </ScrollView>
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 

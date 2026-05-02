@@ -18,7 +18,10 @@ export const useCreateMachine = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (machine: Omit<Machine, "id">) => create_machine(machine),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["machines"] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["machines"] });
+      queryClient.invalidateQueries({ queryKey: ["hebdomadaire"] });
+    }
   });
 };
 
@@ -29,6 +32,7 @@ export const useUpdateMachine = () => {
     onSuccess: (_, machine) => {
       queryClient.invalidateQueries({ queryKey: ["machines"] });
       queryClient.invalidateQueries({ queryKey: ["machines", machine.id] });
+      queryClient.invalidateQueries({ queryKey: ["hebdomadaire"] });
     }
   });
 };
@@ -37,6 +41,9 @@ export const useDeleteMachine = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => delete_machine(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["machines"] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["machines"] });
+      queryClient.invalidateQueries({ queryKey: ["hebdomadaire"] });
+    }
   });
 };

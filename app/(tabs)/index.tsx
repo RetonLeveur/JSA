@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ThemedText } from "@/components/themed-text";
@@ -71,8 +71,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container}>
         <ThemedView style={styles.header}>
           <View>
             <ThemedText type="title">Hebdomadaire</ThemedText>
@@ -173,7 +172,6 @@ export default function HomeScreen() {
           />
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
   );
 }
 

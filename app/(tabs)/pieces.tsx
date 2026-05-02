@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -16,8 +16,7 @@ export default function Pieces() {
   const { data: pieces, isLoading, isError } = usePieces();
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container}>
         <ThemedView style={styles.header}>
           <View>
             <ThemedText type="title">Pieces</ThemedText>
@@ -78,7 +77,6 @@ export default function Pieces() {
           />
         )}
       </SafeAreaView>
-    </SafeAreaProvider>
   );
 }
 

@@ -10,7 +10,7 @@ import {
   View
 } from "react-native";
 import { Stack, router } from "expo-router";
-import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -78,7 +78,7 @@ export default function NewHebdomadaire() {
   const canSubmit = date.trim().length > 0 && !isPending;
 
   return (
-    <SafeAreaProvider>
+    <>
       <Stack.Screen options={{ title: "New Hebdomadaire" }} />
       <SafeAreaView style={styles.container} edges={["bottom"]}>
         <KeyboardAvoidingView
@@ -224,7 +224,7 @@ export default function NewHebdomadaire() {
             </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </SafeAreaProvider>
+    </>
   );
 }
 
